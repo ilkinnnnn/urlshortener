@@ -80,9 +80,6 @@ public class UrlService {
     public PageResponse<UrlResponse> getAll(Jwt jwt, Pageable pageable) {
         AuthenticatedUser aUser = new AuthenticatedUser(jwt);
         Page<Url> result;
-//        if (aUser.isAdmin()) {
-//            result = urlRepo.findAll(pageable);
-//        }
         result = urlRepo.findAllByUserId(aUser.id(), pageable);
 
         return new PageResponse<>(result.map(urlMapper::urlResponse));
