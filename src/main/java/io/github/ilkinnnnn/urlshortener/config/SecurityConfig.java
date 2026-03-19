@@ -3,10 +3,12 @@ package io.github.ilkinnnnn.urlshortener.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -29,17 +31,18 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(
+                        s -> s
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/error",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
+                        .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/refresh"
                         ).permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(Customizer.withDefaults()));
 

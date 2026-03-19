@@ -32,9 +32,13 @@ public class Url {
     @JoinColumn(name = "users_id", nullable = false)
     private User user;
 
+    @Column(name = "users_id", insertable = false, updatable = false)
+    private Long userId;
+
     @PrePersist
     private void prePersist() {
-        createdAt = LocalDateTime.now();
-        lastAccessedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        lastAccessedAt = now;
     }
 }

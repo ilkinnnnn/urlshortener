@@ -12,6 +12,7 @@ import io.github.ilkinnnnn.urlshortener.repository.UserRepo;
 import io.github.ilkinnnnn.urlshortener.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,6 +42,7 @@ public class AuthService {
 
         String refreshToken = createRefreshToken(user);
         String accessToken = jwtUtil.generateToken(user.getId(), false);
+
 
         return new AuthResponse(
                 new UserResponse(user.getId(), user.getUsername()),
