@@ -43,6 +43,7 @@ public class UrlService {
         Url url = new Url();
         url.setOriginalUrl(request.originalUrl());
         url.setShortCode(shortCode);
+        url.setExpiresAt(LocalDateTime.now().plus(Duration.ofDays(7)));
         url.setUser(user);
         urlRepo.save(url);
         return urlMapper.urlResponse(url);
@@ -51,15 +52,28 @@ public class UrlService {
     public String getOriginalUrl(String shortCode) {
         String originalUrl = redisTemplate.opsForValue().get(shortCode);
         if (originalUrl != null) {
-            setUrlInfoToRedis(shortCode);
+            String originalUrlExp = redisTemplate.opsForValue().get("expires: " + shortCode);
+            if (
+                    originalUrlExp == null ||
+                    LocalDateTime.parse(originalUrlExp).isBefore(LocalDateTime.now())
+            ) {
+                throw new NotFoundException("sort code expired");
+            }
+
+            setUrlInfoUpdateToRedis(shortCode);
             return originalUrl;
         }
 
         Url url = urlRepo.findByShortCode(shortCode)
                 .orElseThrow(() -> new NotFoundException("short code not found"));
 
+        if (url.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new NotFoundException("sort code expired");
+        }
+
         redisTemplate.opsForValue().set(shortCode, url.getOriginalUrl(), Duration.ofHours(24));
-        setUrlInfoToRedis(shortCode);
+        redisTemplate.opsForValue().set("expires: " + shortCode, url.getExpiresAt().toString());
+        setUrlInfoUpdateToRedis(shortCode);
         return url.getOriginalUrl();
     }
 
@@ -123,7 +137,7 @@ public class UrlService {
         return result.toString();
     }
 
-    private void setUrlInfoToRedis(String shortCode) {
+    private void setUrlInfoUpdateToRedis(String shortCode) {
         redisTemplate.opsForValue().increment("clicks: " + shortCode);
         redisTemplate.opsForValue().set("lat: " + shortCode, LocalDateTime.now().toString());
     }

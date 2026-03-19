@@ -8,6 +8,7 @@ public record UrlResponse(
         String shortCode,
         Long clickCount,
         LocalDateTime createdAt,
-        LocalDateTime lastAccessedAt
+        LocalDateTime lastAccessedAt,
+        LocalDateTime expiresAt
 ) {
 }

@@ -26,6 +26,9 @@ public class Url {
 
     @Setter(AccessLevel.NONE)
     private LocalDateTime createdAt;
+
+    private LocalDateTime expiresAt;
+
     private LocalDateTime lastAccessedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
