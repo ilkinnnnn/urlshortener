@@ -21,4 +21,6 @@ public interface UrlRepo extends JpaRepository<Url, Long> {
 
     Page<Url> findAllByUserId(Long id, Pageable pageable);
     void deleteAllByExpiresAtBefore(LocalDateTime expiresAt);
+
+    Boolean existsByShortCode(String shortCode);
 }

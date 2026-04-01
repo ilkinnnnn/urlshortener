@@ -1,6 +1,8 @@
 package io.github.ilkinnnnn.urlshortener.service;
 
+import io.github.ilkinnnnn.urlshortener.exception.InvalidShortCodeException;
 import io.github.ilkinnnnn.urlshortener.exception.NotFoundException;
+import io.github.ilkinnnnn.urlshortener.exception.ShortCodeAlreadyExistException;
 import io.github.ilkinnnnn.urlshortener.exception.UnauthorizedException;
 import io.github.ilkinnnnn.urlshortener.mapper.UrlMapper;
 import io.github.ilkinnnnn.urlshortener.model.AuthenticatedUser;
@@ -38,7 +40,20 @@ public class UrlService {
                 .findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        String shortCode = getRandomShortCode();
+        String shortCode;
+        if (request.shortCode() != null) {
+            if (!request.shortCode().matches("^[0-9a-zA-Z]{6}$")) {
+                throw new InvalidShortCodeException();
+            }
+
+            Boolean check = urlRepo.existsByShortCode(request.shortCode());
+            if (check) {
+                throw new ShortCodeAlreadyExistException();
+            }
+            shortCode = request.shortCode();
+        } else {
+            shortCode = getRandomShortCode();
+        }
 
         Url url = new Url();
         url.setOriginalUrl(request.originalUrl());
@@ -55,7 +70,7 @@ public class UrlService {
             String originalUrlExp = redisTemplate.opsForValue().get("expires: " + shortCode);
             if (
                     originalUrlExp == null ||
-                    LocalDateTime.parse(originalUrlExp).isBefore(LocalDateTime.now())
+                            LocalDateTime.parse(originalUrlExp).isBefore(LocalDateTime.now())
             ) {
                 throw new NotFoundException("sort code expired");
             }
@@ -127,7 +142,7 @@ public class UrlService {
         Random random = new Random();
         StringBuilder result = new StringBuilder();
 
-        for (int i = 0; i < 6; i ++) {
+        for (int i = 0; i < 6; i++) {
             result.append(characters.charAt(random.nextInt(characters.length())));
         }
 

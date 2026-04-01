@@ -4,8 +4,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.CONFLICT)
-public class UsernameAlreadyExist extends RuntimeException implements AddMessageToErrorResponse {
-    public UsernameAlreadyExist() {
-        super("Username already exists");
+public class ShortCodeAlreadyExistException extends RuntimeException implements AddMessageToErrorResponse {
+    public ShortCodeAlreadyExistException() {
+        super("Short code already exists");
     }
 }
