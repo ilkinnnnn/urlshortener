@@ -1,5 +1,6 @@
 package io.github.ilkinnnnn.urlshortener.service;
 
+import io.github.ilkinnnnn.urlshortener.config.AdminProperties;
 import io.github.ilkinnnnn.urlshortener.exception.UnauthorizedException;
 import io.github.ilkinnnnn.urlshortener.exception.UsernameAlreadyExist;
 import io.github.ilkinnnnn.urlshortener.model.entity.RefreshToken;
@@ -12,7 +13,6 @@ import io.github.ilkinnnnn.urlshortener.repository.UserRepo;
 import io.github.ilkinnnnn.urlshortener.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,10 +28,12 @@ public class AuthService {
     private final RefreshTokenRepo refreshTokenRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AdminProperties adminProperties;
 
     @Transactional
     public AuthResponse register(AuthRequest request) {
-        if (userRepo.existsByUsername(request.username())) {
+        if (request.username().equals(adminProperties.getUsername())
+                || userRepo.existsByUsername(request.username())) {
             throw new UsernameAlreadyExist();
         }
 
@@ -52,6 +54,17 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest request) {
+        if (request.username().equals(adminProperties.getUsername())) {
+            if (passwordEncoder.matches(request.password(), adminProperties.getPassword())) {
+                return new AuthResponse(
+                        null,
+                        jwtUtil.generateToken(0L, true),
+                        "no refresh for admin"
+                );
+            }
+            throw new BadCredentialsException("Bad credentials");
+        }
+
         User user = userRepo.findByUsername(request.username())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 

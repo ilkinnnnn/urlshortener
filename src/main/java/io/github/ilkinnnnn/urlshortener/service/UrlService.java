@@ -11,8 +11,10 @@ import io.github.ilkinnnnn.urlshortener.model.entity.User;
 import io.github.ilkinnnnn.urlshortener.model.request.CreateUrlRequest;
 import io.github.ilkinnnnn.urlshortener.model.response.PageResponse;
 import io.github.ilkinnnnn.urlshortener.model.response.UrlResponse;
+import io.github.ilkinnnnn.urlshortener.model.response.UrlResponseWithUserId;
 import io.github.ilkinnnnn.urlshortener.repository.UrlRepo;
 import io.github.ilkinnnnn.urlshortener.repository.UserRepo;
+import io.github.ilkinnnnn.urlshortener.util.ShortCodeGenerator;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,7 +26,6 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.Random;
 
 @Service
 @AllArgsConstructor
@@ -46,13 +47,16 @@ public class UrlService {
                 throw new InvalidShortCodeException();
             }
 
-            Boolean check = urlRepo.existsByShortCode(request.shortCode());
-            if (check) {
+            if (urlRepo.existsByShortCode(request.shortCode())) {
                 throw new ShortCodeAlreadyExistException();
             }
+
             shortCode = request.shortCode();
         } else {
-            shortCode = getRandomShortCode();
+            shortCode = ShortCodeGenerator.getRandom();
+            if (urlRepo.existsByShortCode(shortCode)) {
+                shortCode = ShortCodeGenerator.getRandom();
+            }
         }
 
         Url url = new Url();
@@ -94,10 +98,15 @@ public class UrlService {
 
     public PageResponse<UrlResponse> getAll(Jwt jwt, Pageable pageable) {
         AuthenticatedUser aUser = new AuthenticatedUser(jwt);
-        Page<Url> result;
-        result = urlRepo.findAllByUserId(aUser.id(), pageable);
+        Page<Url> result = urlRepo.findAllByUserId(aUser.id(), pageable);
 
         return new PageResponse<>(result.map(urlMapper::urlResponse));
+    }
+
+    public PageResponse<UrlResponseWithUserId> getAllAdmin(Pageable pageable) {
+        Page<Url> result = urlRepo.findAll(pageable);
+
+        return new PageResponse<>(result.map(urlMapper::urlResponseWithUserId));
     }
 
     @Transactional
@@ -137,17 +146,6 @@ public class UrlService {
         redisTemplate.opsForValue().getAndDelete(shortCode);
     }
 
-    private String getRandomShortCode() {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        Random random = new Random();
-        StringBuilder result = new StringBuilder();
-
-        for (int i = 0; i < 6; i++) {
-            result.append(characters.charAt(random.nextInt(characters.length())));
-        }
-
-        return result.toString();
-    }
 
     private void setUrlInfoUpdateToRedis(String shortCode) {
         redisTemplate.opsForValue().increment("clicks: " + shortCode);

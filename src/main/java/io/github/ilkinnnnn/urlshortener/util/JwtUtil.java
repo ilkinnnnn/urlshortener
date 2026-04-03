@@ -25,7 +25,7 @@ public class JwtUtil {
         JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
 
         Instant now = Instant.now();
-        List<String> roles = isAdmin ? List.of("ADMIN", "USER") : List.of("USER");
+        List<String> roles = isAdmin ? List.of("ADMIN") : List.of("USER");
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self")

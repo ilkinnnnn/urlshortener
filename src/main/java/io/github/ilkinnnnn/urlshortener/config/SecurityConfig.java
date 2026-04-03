@@ -1,10 +1,10 @@
 package io.github.ilkinnnnn.urlshortener.config;
 
+import io.github.ilkinnnnn.urlshortener.util.CustomJwtAuthenticationConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -28,7 +28,7 @@ public class SecurityConfig {
     private String jwtSecret;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomJwtAuthenticationConverter jwtConverter) {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(
@@ -41,10 +41,13 @@ public class SecurityConfig {
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/refresh"
                         ).permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/short-urls/**").hasRole("USER")
+                        .requestMatchers("/api/v1/auth/logout").hasAnyRole("USER")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth -> oauth
-                        .jwt(Customizer.withDefaults()));
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)));
 
 
         return http.build();
