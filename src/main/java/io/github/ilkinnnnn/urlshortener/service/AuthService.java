@@ -14,7 +14,6 @@ import io.github.ilkinnnnn.urlshortener.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +39,7 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.username());
         user.setPassword(passwordEncoder.encode(request.password()));
-        userRepo.save(user);
+        user = userRepo.save(user);
 
         String refreshToken = createRefreshToken(user);
         String accessToken = jwtUtil.generateToken(user.getId(), false);
@@ -66,7 +65,7 @@ public class AuthService {
         }
 
         User user = userRepo.findByUsername(request.username())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new BadCredentialsException("Bad credentials"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BadCredentialsException("Bad credentials");
