@@ -64,7 +64,7 @@ public class UrlService {
         url.setShortCode(shortCode);
         url.setExpiresAt(LocalDateTime.now().plus(Duration.ofDays(7)));
         url.setUser(user);
-        urlRepo.save(url);
+        url = urlRepo.save(url);
         return urlMapper.urlResponse(url);
     }
 
@@ -87,7 +87,7 @@ public class UrlService {
                 .orElseThrow(() -> new NotFoundException("short code not found"));
 
         if (url.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new NotFoundException("sort code expired");
+            throw new NotFoundException("short code expired");
         }
 
         redisTemplate.opsForValue().set(shortCode, url.getOriginalUrl(), Duration.ofHours(24));
